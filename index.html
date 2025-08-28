@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>교육 이수증 통합 관리 시스템</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --text-color: #333;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: var(--bg-color); margin: 0; padding: 2rem; color: var(--text-color); }
+        .container { max-width: 1000px; margin: auto; }
+        .main-header { padding: 2rem; text-align: center; color: white; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); border-radius: 12px; margin-bottom: 2rem; box-shadow: var(--shadow); }
+        .main-header h1 { margin: 0; font-size: 2.5rem; }
+        .main-header p { opacity: 0.9; margin: 0.5rem 0 0; }
+        .card { background: var(--card-bg); padding: 2rem; border-radius: 12px; box-shadow: var(--shadow); margin-bottom: 2rem; }
+        .card-title { font-size: 1.5rem; margin: 0 0 1.5rem 0; padding-bottom: 1rem; border-bottom: 1px solid #eee; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; font-weight: 500; margin-bottom: 0.5rem; }
+        .form-group input, .form-group textarea { width: 100%; padding: 0.8rem; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box; }
+        .form-group textarea { height: 120px; resize: vertical; }
+        .btn { padding: 0.8rem 1.5rem; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 500; transition: all 0.2s ease; }
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-primary:hover { background-color: #5a6fcf; }
+        .btn-success { background-color: #28a745; color: white; }
+        .btn-danger { background-color: #dc3545; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-info { background: #17a2b8; color: white; }
+        .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
+        .action-buttons { display: flex; gap: 1rem; flex-wrap: wrap; }
+        .mode-switcher { position: fixed; top: 20px; right: 20px; z-index: 100; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
+        .stat-card { background: var(--card-bg); padding: 1.5rem; border-radius: 12px; text-align: center; border-top: 4px solid var(--primary-color); box-shadow: var(--shadow); }
+        .stat-number { font-size: 2.5rem; font-weight: 700; color: var(--primary-color); }
+        .stat-label { font-size: 1rem; color: #666; }
+        .participants-table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; }
+        .participants-table th, .participants-table td { padding: 1rem; border-bottom: 1px solid #eee; text-align: left; }
+        .participants-table th { background-color: #f8f9fa; font-weight: 500; }
+        #certificate-wrapper { display: none; padding: 2rem; margin-top: 2rem; background: white; position: relative; border: 1px solid #ddd; }
+        #certificate-content { padding: 2rem; text-align: center; max-width: 680px; margin: auto; }
+        .cert-header h2 { font-size: 2.5rem; font-weight: 700; margin: 0; letter-spacing: 0.2rem; }
+        .cert-header p { font-size: 1.2rem; color: #555; margin-top: 0.5rem; letter-spacing: 0.1rem; }
+        .cert-info { text-align: left; margin: 2.5rem 0; border-top: 1px solid #eee; border-bottom: 1px solid #eee; padding: 1.5rem 0; }
+        .cert-info p { margin: 0.8rem 0; font-size: 1.1rem; }
+        .cert-body { font-size: 1.1rem; line-height: 1.8; margin: 2.5rem 0; }
+        .cert-date { font-size: 1.2rem; margin: 2.5rem 0; font-weight: 500; }
+        .issuer-container { position: relative; display: inline-block; margin-top: 3rem; }
+        .cert-issuer { font-size: 1.5rem; font-weight: 700; display: inline; padding-right: 60px; }
+        .seal-image { position: absolute; right: -20px; top: 50%; transform: translateY(-60%); width: 100px; height: 100px; opacity: 0.9; }
+        #admin-view { display: none; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 200; }
+        .modal-content { background: white; padding: 2rem; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); }
+        .modal-content h2 { margin-top: 0; }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; }
+        @media print { body, .container { margin: 0; padding: 0; box-shadow: none; background: white; } .no-print { display: none !important; } #certificate-wrapper { display: block !important; box-shadow: none; border: none; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="user-view">
+            <header class="main-header">
+                <h1>교육 이수증 발급</h1>
+                <p>이메일을 입력하여 이수증을 발급받으세요.</p>
+            </header>
+            <div class="card">
+                <div class="form-group">
+                    <label for="email-input">이메일 주소</label>
+                    <input type="email" id="email-input" placeholder="등록된 이메일 주소를 입력하세요">
+                </div>
+                <button id="lookup-btn" class="btn btn-primary">이수증 조회하기</button>
+                <div id="user-message" style="margin-top: 1rem; font-weight: 500;"></div>
+            </div>
+            <div id="certificate-wrapper" class="no-print">
+                <div id="certificate-content">
+                    <div class="cert-header">
+                        <h2>교육이수증</h2>
+                        <p>CERTIFICATE</p>
+                    </div>
+                    <div class="cert-info">
+                        <p>성&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;명: <span id="cert-name-val" style="font-weight:bold;"></span></p>
+                        <p>교육 기간: <span id="cert-period-val"></span></p>
+                        <p>교육 과정: <span id="cert-course-val"></span></p>
+                    </div>
+                    <p class="cert-body" id="cert-body-val"></p>
+                    <p class="cert-date" id="cert-date-val"></p>
+                    <div class="issuer-container">
+                        <p class="cert-issuer" id="cert-issuer-val"></p>
+                        <img id="seal-img" src="seal.png" alt="관인" class="seal-image" onerror="this.style.display='none'">
+                    </div>
+                </div>
+            </div>
+            <div class="card no-print" id="print-card" style="display:none;">
+                 <button onclick="window.print()" class="btn btn-success">🖨️ 인쇄하기</button>
+            </div>
+        </div>
+        <div id="admin-view">
+            <header class="main-header">
+                <h1>🎓 관리자 대시보드</h1>
+                <p>교육정보, 참가자 관리 및 데이터를 관리합니다.</p>
+            </header>
+            <div class="card stats-grid">
+                <div class="stat-card"><div class="stat-number" id="total-participants">0</div><div class="stat-label">총 참가자</div></div>
+                <div class="stat-card"><div class="stat-number" id="issue-count">0</div><div class="stat-label">이수증 발급 횟수</div></div>
+            </div>
+            <div class="card">
+                <h2 class="card-title">📚 교육정보 설정</h2>
+                <div class="form-group"><label for="course-name">교육 과정명</label><input type="text" id="course-name"></div>
+                <div class="form-group"><label for="education-period">교육 기간 (예: 2024년 7월 10일 ~ 7월 12일)</label><input type="text" id="education-period"></div>
+                <div class="form-group"><label for="completion-date">이수증 발급일</label><input type="date" id="completion-date"></div>
+                <div class="form-group"><label for="host-org">주관 기관 (본문 내용에 사용)</label><input type="text" id="host-org"></div>
+                <div class="form-group"><label for="issuer-name">발행 기관명</label><input type="text" id="issuer-name"></div>
+                <button id="save-edu-info-btn" class="btn btn-primary">💾 교육정보 저장</button>
+            </div>
+            <div class="card">
+                <h2 class="card-title">👤 참가자 개별 등록</h2>
+                <div class="form-group"><label for="participant-name">이름</label><input type="text" id="participant-name"></div>
+                <div class="form-group"><label for="participant-email">이메일</label><input type="email" id="participant-email"></div>
+                <button id="add-participant-btn" class="btn btn-success">➕ 개별 추가</button>
+            </div>
+            <div class="card">
+                <h2 class="card-title">📋 참가자 일괄 등록</h2>
+                <div class="form-group"><label for="bulk-input">참가자 목록 (이름,이메일)</label><textarea id="bulk-input" placeholder="홍길동,gildong@email.com\n김철수,chulsoo@email.com"></textarea></div>
+                <button id="bulk-add-btn" class="btn btn-primary">📥 일괄 등록</button>
+            </div>
+            <div class="card">
+                <h2 class="card-title">👥 등록된 참가자 목록</h2>
+                <div style="overflow-x:auto;"><table class="participants-table"><thead><tr><th>이름</th><th>이메일</th><th>삭제</th></tr></thead><tbody id="admin-table-body"></tbody></table></div>
+            </div>
+            <div class="card">
+                <h2 class="card-title">💾 데이터 관리</h2>
+                <p style="font-size:0.9rem; color:#555;">중요: 현재 모든 정보는 브라우저에만 저장됩니다. 데이터를 보존하려면 반드시 백업하세요.</p>
+                <div class="action-buttons">
+                    <button id="backup-btn" class="btn btn-info">📥 전체 데이터 백업</button>
+                    <button id="import-btn" class="btn btn-secondary">📤 데이터 가져오기</button>
+                    <input type="file" id="import-file-input" accept=".json" style="display:none;">
+                </div>
+            </div>
+        </div>
+        <div class="mode-switcher no-print">
+            <button id="mode-switch-btn" class="btn btn-secondary btn-sm">관리자 모드</button>
+        </div>
+    </div>
+    <div id="password-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>관리자 로그인</h2>
+            <div class="form-group">
+                <label for="password-input">비밀번호</label>
+                <input type="password" id="password-input">
+            </div>
+            <div id="modal-error-msg" style="color: #dc3545; font-size: 0.9rem; height: 1rem;"></div>
+            <div class="modal-buttons">
+                <button id="modal-cancel-btn" class="btn btn-secondary">취소</button>
+                <button id="modal-login-btn" class="btn btn-primary">로그인</button>
+            </div>
+        </div>
+    </div>
+<script>
+const AppState = {
+    isAdminView: false,
+    participants: [],
+    educationInfo: {
+        courseName: '한국사립대학교도서관협의회 제37차 실무자 워크숍',
+        educationPeriod: '2024년 7월 10일 ~ 7월 12일 (12시간)',
+        completionDate: '2024-07-12',
+        hostOrg: '경희대학교',
+        issuerName: '한국사립대학교도서관협의회'
+    },
+    issueCount: 0
+};
+const DOMElements = {
+    userView: document.getElementById('user-view'),
+    adminView: document.getElementById('admin-view'),
+    modeSwitchBtn: document.getElementById('mode-switch-btn'),
+    emailInput: document.getElementById('email-input'),
+    lookupBtn: document.getElementById('lookup-btn'),
+    userMessage: document.getElementById('user-message'),
+    certificateWrapper: document.getElementById('certificate-wrapper'),
+    printCard: document.getElementById('print-card'),
+    totalParticipantsEl: document.getElementById('total-participants'),
+    issueCountEl: document.getElementById('issue-count'),
+    courseNameInput: document.getElementById('course-name'),
+    educationPeriodInput: document.getElementById('education-period'),
+    completionDateInput: document.getElementById('completion-date'),
+    hostOrgInput: document.getElementById('host-org'),
+    issuerNameInput: document.getElementById('issuer-name'),
+    saveEduInfoBtn: document.getElementById('save-edu-info-btn'),
+    participantNameInput: document.getElementById('participant-name'),
+    participantEmailInput: document.getElementById('participant-email'),
+    addParticipantBtn: document.getElementById('add-participant-btn'),
+    bulkInput: document.getElementById('bulk-input'),
+    bulkAddBtn: document.getElementById('bulk-add-btn'),
+    adminTableBody: document.getElementById('admin-table-body'),
+    backupBtn: document.getElementById('backup-btn'),
+    importBtn: document.getElementById('import-btn'),
+    importFileInput: document.getElementById('import-file-input'),
+    passwordModal: document.getElementById('password-modal'),
+    passwordInput: document.getElementById('password-input'),
+    modalErrorMsg: document.getElementById('modal-error-msg'),
+    modalLoginBtn: document.getElementById('modal-login-btn'),
+    modalCancelBtn: document.getElementById('modal-cancel-btn'),
+};
+const Storage = {
+    save: () => localStorage.setItem('app_data_v2', JSON.stringify(AppState)),
+    load: () => {
+        const data = localStorage.getItem('app_data_v2');
+        if (data) {
+            const parsedData = JSON.parse(data);
+            Object.assign(AppState, parsedData);
+        }
+    }
+};
+const UI = {
+    init: () => {
+        DOMElements.userView.style.display = 'block';
+        DOMElements.adminView.style.display = 'none';
+        DOMElements.modeSwitchBtn.textContent = '관리자 모드';
+        AppState.isAdminView = false;
+    },
+    toggleView: () => {
+        AppState.isAdminView = !AppState.isAdminView;
+        if (AppState.isAdminView) {
+            DOMElements.userView.style.display = 'none';
+            DOMElements.adminView.style.display = 'block';
+            DOMElements.modeSwitchBtn.textContent = '사용자 모드';
+            UI.renderAdminDashboard();
+        } else {
+            DOMElements.userView.style.display = 'block';
+            DOMElements.adminView.style.display = 'none';
+            DOMElements.modeSwitchBtn.textContent = '관리자 모드';
+        }
+    },
+    renderAdminDashboard: () => {
+        DOMElements.totalParticipantsEl.textContent = AppState.participants.length;
+        DOMElements.issueCountEl.textContent = AppState.issueCount;
+        DOMElements.courseNameInput.value = AppState.educationInfo.courseName;
+        DOMElements.educationPeriodInput.value = AppState.educationInfo.educationPeriod;
+        DOMElements.completionDateInput.value = AppState.educationInfo.completionDate;
+        DOMElements.hostOrgInput.value = AppState.educationInfo.hostOrg;
+        DOMElements.issuerNameInput.value = AppState.educationInfo.issuerName;
+        UI.renderParticipantTable();
+    },
+    renderParticipantTable: () => {
+        DOMElements.adminTableBody.innerHTML = '';
+        AppState.participants.forEach((p, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td>${p.name}</td><td>${p.email}</td><td><button class="btn btn-danger btn-sm" data-index="${index}">삭제</button></td>`;
+            DOMElements.adminTableBody.appendChild(row);
+        });
+    },
+    displayUserMessage: (text, isError = false) => {
+        DOMElements.userMessage.textContent = text;
+        DOMElements.userMessage.style.color = isError ? '#dc3545' : '#28a745';
+    },
+    displayCertificate: (participant) => {
+        document.getElementById('cert-name-val').textContent = participant.name;
+        document.getElementById('cert-period-val').textContent = AppState.educationInfo.educationPeriod;
+        document.getElementById('cert-course-val').textContent = AppState.educationInfo.courseName;
+        document.getElementById('cert-body-val').innerHTML = `귀하는 한국사립대학교도서관협의회가 주최하고<br>${AppState.educationInfo.hostOrg}가 주관한 「${AppState.educationInfo.courseName}」의<br>전과정을 성실히 이수하였기에 이 증서를 드립니다.`;
+        document.getElementById('cert-date-val').textContent = new Date(AppState.educationInfo.completionDate).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+        document.getElementById('cert-issuer-val').textContent = AppState.educationInfo.issuerName;
+        DOMElements.certificateWrapper.style.display = 'block';
+        DOMElements.printCard.style.display = 'block';
+    },
+    hideCertificate: () => {
+        DOMElements.certificateWrapper.style.display = 'none';
+        DOMElements.printCard.style.display = 'none';
+    }
+};
+const Handlers = {
+    handleModeSwitch: () => {
+        if (!AppState.isAdminView) {
+            DOMElements.passwordModal.style.display = 'flex';
+            DOMElements.passwordInput.focus();
+        } else UI.toggleView();
+    },
+    handleModalLogin: () => {
+        const password = DOMElements.passwordInput.value;
+        if (password === 'Postech@1986') {
+            DOMElements.passwordModal.style.display = 'none';
+            DOMElements.passwordInput.value = '';
+            DOMElements.modalErrorMsg.textContent = '';
+            UI.toggleView();
+        } else {
+            DOMElements.modalErrorMsg.textContent = '비밀번호가 틀렸습니다.';
+        }
+    },
+    handleModalCancel: () => {
+        DOMElements.passwordModal.style.display = 'none';
+        DOMElements.passwordInput.value = '';
+        DOMElements.modalErrorMsg.textContent = '';
+    },
+    handleLookup: () => {
+        const email = DOMElements.emailInput.value.trim().toLowerCase();
+        if (!email) { UI.displayUserMessage('이메일을 입력해주세요.', true); return; }
+        const participant = AppState.participants.find(p => p.email.toLowerCase() === email);
+        if (participant) {
+            UI.displayUserMessage('이수증이 확인되었습니다. 하단에서 내용을 확인하고 인쇄하세요.');
+            UI.displayCertificate(participant);
+            AppState.issueCount++;
+            Storage.save();
+        } else {
+            UI.displayUserMessage('등록된 이메일이 없습니다. 사무국에 문의해주세요.', true);
+            UI.hideCertificate();
+        }
+    },
+    handleSaveEduInfo: () => {
+        AppState.educationInfo.courseName = DOMElements.courseNameInput.value;
+        AppState.educationInfo.educationPeriod = DOMElements.educationPeriodInput.value;
+        AppState.educationInfo.completionDate = DOMElements.completionDateInput.value;
+        AppState.educationInfo.hostOrg = DOMElements.hostOrgInput.value;
+        AppState.educationInfo.issuerName = DOMElements.issuerNameInput.value;
+        Storage.save();
+        alert('교육정보가 저장되었습니다.');
+    },
+    handleAddParticipant: () => {
+        const name = DOMElements.participantNameInput.value.trim();
+        const email = DOMElements.participantEmailInput.value.trim().toLowerCase();
+        if (!name || !email) { alert('이름과 이메일을 모두 입력해야 합니다.'); return; }
+        if (AppState.participants.some(p => p.email === email)) { alert('이미 등록된 이메일입니다.'); return; }
+        AppState.participants.push({ name, email });
+        Storage.save();
+        UI.renderAdminDashboard();
+        DOMElements.participantNameInput.value = '';
+        DOMElements.participantEmailInput.value = '';
+    },
+    handleBulkAdd: () => {
+        const lines = DOMElements.bulkInput.value.trim().split('\n');
+        let addedCount = 0;
+        lines.forEach(line => {
+            const [name, email] = line.split(',').map(s => s.trim());
+            if (name && email && !AppState.participants.some(p => p.email.toLowerCase() === email.toLowerCase())) {
+                AppState.participants.push({ name, email: email.toLowerCase() });
+                addedCount++;
+            }
+        });
+        if (addedCount > 0) {
+            Storage.save();
+            UI.renderAdminDashboard();
+            DOMElements.bulkInput.value = '';
+            alert(`${addedCount}명의 참가자가 추가되었습니다.`);
+        } else alert('추가할 유효한 참가자가 없거나 모두 중복된 이메일입니다.');
+    },
+    handleTableClick: (e) => {
+        if (e.target.classList.contains('btn-danger')) {
+            const index = parseInt(e.target.dataset.index);
+            if (confirm(`'${AppState.participants[index].name}' 참가자를 삭제하시겠습니까?`)) {
+                AppState.participants.splice(index, 1);
+                Storage.save();
+                UI.renderAdminDashboard();
+            }
+        }
+    },
+    handleBackup: () => {
+        const dataStr = JSON.stringify(AppState, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `certificate_backup_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    },
+    handleImport: () => DOMElements.importFileInput.click(),
+    handleFileImport: (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const importedData = JSON.parse(event.target.result);
+                if (confirm('현재 데이터를 모두 지우고 가져온 데이터로 복원하시겠습니까?')) {
+                    Object.assign(AppState, importedData);
+                    Storage.save();
+                    UI.renderAdminDashboard();
+                    alert('데이터를 성공적으로 복원했습니다.');
+                }
+            } catch (err) { alert('유효하지 않은 파일 형식입니다.'); }
+        };
+        reader.readAsText(file);
+        DOMElements.importFileInput.value = '';
+    }
+};
+document.addEventListener('DOMContentLoaded', () => {
+    Storage.load();
+    UI.init();
+    DOMElements.modeSwitchBtn.addEventListener('click', Handlers.handleModeSwitch);
+    DOMElements.lookupBtn.addEventListener('click', Handlers.handleLookup);
+    DOMElements.saveEduInfoBtn.addEventListener('click', Handlers.handleSaveEduInfo);
+    DOMElements.addParticipantBtn.addEventListener('click', Handlers.handleAddParticipant);
+    DOMElements.bulkAddBtn.addEventListener('click', Handlers.handleBulkAdd);
+    DOMElements.adminTableBody.addEventListener('click', Handlers.handleTableClick);
+    DOMElements.backupBtn.addEventListener('click', Handlers.handleBackup);
+    DOMElements.importBtn.addEventListener('click', Handlers.handleImport);
+    DOMElements.importFileInput.addEventListener('change', Handlers.handleFileImport);
+    DOMElements.modalLoginBtn.addEventListener('click', Handlers.handleModalLogin);
+    DOMElements.modalCancelBtn.addEventListener('click', Handlers.handleModalCancel);
+    DOMElements.passwordInput.addEventListener('keyup', (event) => {
+        if (event.key === 'Enter') Handlers.handleModalLogin();
+    });
+});
+</script>
+</body>
+</html>
