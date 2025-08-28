@@ -1,0 +1,37 @@
+{
+  "isAdminView": true,
+  "participants": [
+    {
+      "name": "권태훈",
+      "email": "r00kie@postech.ac.kr"
+    },
+    {
+      "name": "이동은",
+      "email": "delee12@postech.ac.kr"
+    },
+    {
+      "name": "이진솔",
+      "email": "honestlee@postech.ac.kr"
+    },
+    {
+      "name": "정수화",
+      "email": "jeongsh@postech.ac.kr"
+    },
+    {
+      "name": "박지인",
+      "email": "jiinpark@postech.ac.kr"
+    },
+    {
+      "name": "유동훈",
+      "email": "wolchon@postech.ac.kr"
+    }
+  ],
+  "educationInfo": {
+    "courseName": "한국사립대학교도서관협의회 제37차 실무자 워크숍",
+    "educationPeriod": "2024년 7월 10일 ~ 7월 12일 (12시간)",
+    "completionDate": "2024-07-12",
+    "hostOrg": "경희대학교",
+    "issuerName": "한국사립대학교도서관협의회"
+  },
+  "issueCount": 1
+}
