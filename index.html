@@ -58,7 +58,7 @@
         .modal-content { background: white; padding: 2rem; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); }
         .modal-content h2 { margin-top: 0; }
         .modal-buttons { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; }
-        @media print { body, .container { margin: 0; padding: 0; box-shadow: none; background: white; } .no-print { display: none !important; } #certificate-wrapper { display: block !important; box-shadow: none; border: none; } }
+        @media print { body * { visibility: hidden; } #certificate-wrapper, #certificate-wrapper * { visibility: visible; } #certificate-wrapper { position: absolute; left: 0; top: 0; width: 100%; height: 100%; margin: 0; padding: 0; border: none !important; } }
     </style>
 </head>
 <body>
@@ -68,7 +68,7 @@
                 <h1>교육 이수증 발급</h1>
                 <p>이메일을 입력하여 이수증을 발급받으세요.</p>
             </header>
-            <div class="card">
+            <div class="card" id="lookup-card">
                 <div class="form-group">
                     <label for="email-input">이메일 주소</label>
                     <input type="email" id="email-input" placeholder="등록된 이메일 주소를 입력하세요">
@@ -95,7 +95,7 @@
                     </div>
                 </div>
             </div>
-            <div class="card no-print" id="print-card" style="display:none;">
+            <div class="card no-print action-buttons" id="print-card" style="display:none;">
                  <button onclick="window.print()" class="btn btn-success">🖨️ 인쇄하기</button>
             </div>
         </div>
@@ -179,6 +179,7 @@ const DOMElements = {
     modeSwitchBtn: document.getElementById('mode-switch-btn'),
     emailInput: document.getElementById('email-input'),
     lookupBtn: document.getElementById('lookup-btn'),
+    lookupCard: document.getElementById('lookup-card'),
     userMessage: document.getElementById('user-message'),
     certificateWrapper: document.getElementById('certificate-wrapper'),
     printCard: document.getElementById('print-card'),
@@ -265,7 +266,7 @@ const UI = {
         document.getElementById('cert-date-val').textContent = new Date(AppState.educationInfo.completionDate).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
         document.getElementById('cert-issuer-val').textContent = AppState.educationInfo.issuerName;
         DOMElements.certificateWrapper.style.display = 'block';
-        DOMElements.printCard.style.display = 'block';
+        DOMElements.printCard.style.display = 'flex';
     },
     hideCertificate: () => {
         DOMElements.certificateWrapper.style.display = 'none';
@@ -302,11 +303,13 @@ const Handlers = {
         if (participant) {
             UI.displayUserMessage('이수증이 확인되었습니다. 하단에서 내용을 확인하고 인쇄하세요.');
             UI.displayCertificate(participant);
+            DOMElements.lookupCard.style.display = 'none'; // Hide the lookup card on success
             AppState.issueCount++;
             Storage.save();
         } else {
             UI.displayUserMessage('등록된 이메일이 없습니다. 사무국에 문의해주세요.', true);
             UI.hideCertificate();
+            DOMElements.lookupCard.style.display = 'block'; // Ensure lookup card is visible on failure
         }
     },
     handleSaveEduInfo: () => {
@@ -391,6 +394,9 @@ document.addEventListener('DOMContentLoaded', () => {
     UI.init();
     DOMElements.modeSwitchBtn.addEventListener('click', Handlers.handleModeSwitch);
     DOMElements.lookupBtn.addEventListener('click', Handlers.handleLookup);
+    DOMElements.emailInput.addEventListener('keyup', (event) => {
+        if (event.key === 'Enter') Handlers.handleLookup();
+    });
     DOMElements.saveEduInfoBtn.addEventListener('click', Handlers.handleSaveEduInfo);
     DOMElements.addParticipantBtn.addEventListener('click', Handlers.handleAddParticipant);
     DOMElements.bulkAddBtn.addEventListener('click', Handlers.handleBulkAdd);
